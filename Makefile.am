@@ -17,82 +17,25 @@
 # under the License.
 #
 
-ACLOCAL_AMFLAGS = -I ./aclocal
-
-SUBDIRS = compiler/cpp lib
+SUBDIRS = .
 
 if WITH_TESTS
 SUBDIRS += test
 endif
 
-if WITH_TUTORIAL
-SUBDIRS += tutorial
-endif
+install:
+	@echo '##############################################################'
+	@echo '##############################################################'
+	@echo 'The Go client library should be installed via "go get", please see /lib/go/README.md'
+	@echo '##############################################################'
+	@echo '##############################################################'
 
-dist-hook:
-	find $(distdir) -type f \( -iname ".DS_Store" -or -iname "._*" -or -iname ".gitignore" \) | xargs rm -rf
-	find $(distdir) -type d \( -iname ".deps" -or -iname ".libs" \) | xargs rm -rf
-	find $(distdir) -type d \( -iname ".svn" -or -iname ".git" \) | xargs rm -rf
+check-local:
+	$(GO) test ./thrift
 
-print-version:
-	@echo $(VERSION)
-
-.PHONY: precross cross
-precross-%: all
-	$(MAKE) -C $* precross
-precross: all precross-test precross-lib
-
-# TODO: generate --server and --client switches from "--with(out)-..." build flags
-cross: precross
-	$(PYTHON) test/test.py -s
-
-TIMES = 1 2 3
-fail: precross
-	$(PYTHON) test/test.py || true
-	$(PYTHON) test/test.py --update-expected-failures=overwrite
-	$(foreach var,$(TIMES),test/test.py -s || true;test/test.py --update-expected-failures=merge;)
-
-codespell_skip_files = \
-	*.jar \
-	*.class \
-	*.so \
-	*.a \
-	*.la \
-	*.o \
-	*.p12 \
-	*OCamlMakefile \
-	.keystore \
-	.truststore \
-	CHANGES \
-	config.sub \
-	configure \
-	depcomp \
-	libtool.m4 \
-	output.* \
-	rebar \
-	thrift
-
-empty :=
-space := $(empty) $(empty)
-comma := ,
-
-skipped_files = $(subst $(space),$(comma),$(codespell_skip_files))
-
-style-local:
-	codespell --write-changes --skip=$(skipped_files) --disable-colors
+all-local:
+	$(GO) build ./thrift
 
 EXTRA_DIST = \
-	.travis.yml \
-	bower.json \
-	composer.json \
-	contrib \
-	CONTRIBUTING.md \
-	debian \
-	doc \
-	doap.rdf \
-	package.json \
-	sonar-project.properties \
-	LICENSE \
-	CHANGES \
-	NOTICE \
+	thrift \
 	README.md

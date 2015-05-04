@@ -17,93 +17,73 @@
 # under the License.
 #
 
-SUBDIRS =
+THRIFT = $(top_builddir)/compiler/cpp/thrift
+THRIFTARGS = -out gopath/src/ --gen go:thrift_import=thrift
+THRIFTTEST = $(top_srcdir)/test/ThriftTest.thrift
 
-if WITH_C_GLIB
-SUBDIRS += c_glib
-endif
+# Thrift for GO has problems with complex map keys: THRIFT-2063
+gopath: $(THRIFT) $(THRIFTTEST) \
+				IncludesTest.thrift \
+				NamespacedTest.thrift \
+				MultiplexedProtocolTest.thrift \
+				OnewayTest.thrift \
+				OptionalFieldsTest.thrift \
+				ServicesTest.thrift \
+				GoTagTest.thrift \
+				TypedefFieldTest.thrift \
+				RefAnnotationFieldsTest.thrift \
+				ErrorTest.thrift \
+				NamesTest.thrift \
+				InitialismsTest.thrift
+	mkdir -p gopath/src
+	grep -v list.*map.*list.*map $(THRIFTTEST) | grep -v 'set<Insanity>' > ThriftTest.thrift
+	$(THRIFT) $(THRIFTARGS) -r IncludesTest.thrift
+	$(THRIFT) $(THRIFTARGS) BinaryKeyTest.thrift
+	$(THRIFT) $(THRIFTARGS) MultiplexedProtocolTest.thrift
+	$(THRIFT) $(THRIFTARGS) OnewayTest.thrift
+	$(THRIFT) $(THRIFTARGS) OptionalFieldsTest.thrift
+	$(THRIFT) $(THRIFTARGS) ServicesTest.thrift
+	$(THRIFT) $(THRIFTARGS) GoTagTest.thrift
+	$(THRIFT) $(THRIFTARGS) TypedefFieldTest.thrift
+	$(THRIFT) $(THRIFTARGS) RefAnnotationFieldsTest.thrift
+	$(THRIFT) $(THRIFTARGS) ErrorTest.thrift
+	$(THRIFT) $(THRIFTARGS) NamesTest.thrift
+	$(THRIFT) $(THRIFTARGS) InitialismsTest.thrift
+	GOPATH=`pwd`/gopath $(GO) get code.google.com/p/gomock/gomock
+	ln -nfs ../../../thrift gopath/src/thrift
+	ln -nfs ../../tests gopath/src/tests
+	touch gopath
 
-if WITH_CPP
-SUBDIRS += cpp
-endif
+check: gopath
+	GOPATH=`pwd`/gopath $(GO) build \
+				includestest \
+				binarykeytest \
+				servicestest \
+				typedeffieldtest \
+				refannotationfieldstest \
+				errortest	\
+				namestest \
+				initialismstest
+	GOPATH=`pwd`/gopath $(GO) test thrift tests
 
-if WITH_PERL
-SUBDIRS += perl
-endif
+clean-local:
+	$(RM) -r gopath ThriftTest.thrift gen-go
 
-if WITH_PHP
-SUBDIRS += php
-endif
-
-if WITH_PYTHON
-SUBDIRS += py
-SUBDIRS += py.twisted
-SUBDIRS += py.tornado
-endif
-
-if WITH_RUBY
-SUBDIRS += rb
-endif
-
-if WITH_HASKELL
-SUBDIRS += hs
-endif
-
-if WITH_HAXE
-SUBDIRS += haxe
-endif
-
-if WITH_GO
-SUBDIRS += go
-endif
-
-if WITH_ERLANG
-SUBDIRS += erl
-endif
-
-#
-# generate html for ThriftTest.thrift
-#
-check-local:
-	$(top_builddir)/compiler/cpp/thrift --gen html -r $(top_srcdir)/test/ThriftTest.thrift
+client: stubs
+	$(GO) run TestClient.go
 
 EXTRA_DIST = \
-	keys \
-	test.py \
-	tests.json \
-	c_glib \
-	cpp \
-	erl \
-	hs \
-	lua \
-	ocaml \
-	perl \
-	php \
-	py \
-	py.twisted \
-	py.tornado \
-	rb \
-	threads \
-	AnnotationTest.thrift \
-	BrokenConstants.thrift \
-	ConstantsDemo.thrift \
-	DebugProtoTest.thrift \
-	DenseLinkingTest.thrift \
-	DocTest.thrift \
-	Include.thrift \
-	JavaBeansTest.thrift \
-	ManyOptionals.thrift \
-	ManyTypedefs.thrift \
-	NameConflictTest.thrift \
-	OptionalRequiredTest.thrift \
-	Recursive.thrift \
-	ReuseObjects.thrift \
-	SmallTest.thrift \
-	StressTest.thrift \
-	ThriftTest.thrift \
-	FastbinaryTest.py \
-	README.md
-
-precross-%:
-	$(MAKE) -C $* precross
-precross: precross-py precross-rb precross-c_glib precross-cpp precross-perl precross-php precross-go
+	tests \
+	BinaryKeyTest.thrift \
+	GoTagTest.thrift \
+	IncludesTest.thrift \
+	MultiplexedProtocolTest.thrift \
+	NamespacedTest.thrift \
+	OnewayTest.thrift \
+	OptionalFieldsTest.thrift \
+	RefAnnotationFieldsTest.thrift \
+	ServicesTest.thrift \
+	TypedefFieldTest.thrift \
+	ErrorTest.thrift \
+	NamesTest.thrift \
+	InitialismsTest.thrift
